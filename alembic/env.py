@@ -14,8 +14,8 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-from app.core.config import settings
-from app.db.database import Base
+from app.core.config import settings  # noqa: E402
+from app.db.database import Base  # noqa: E402
 
 # força a URL do banco a vir do .env via pydantic
 config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
