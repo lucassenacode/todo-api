@@ -1,17 +1,19 @@
 services:
   api:
     build: .
-    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
-    env_file:
-      - .env
-    volumes:
-      - ./app:/app/app
-      - ./alembic:/app/alembic        # <— monta o diretório de migrações
-      - ./alembic.ini:/app/alembic.ini # <— monta o arquivo de config
+    env_file: .env
     ports:
       - "8000:8000"
+    volumes:
+      # úteis em DEV (hot-reload e migrações editáveis)
+      - ./app:/app/app
+      - ./alembic:/app/alembic
+      - ./alembic.ini:/app/alembic.ini
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+    environment:
+      MIGRATE_ON_START: "true"
 
   db:
     image: postgres:15-alpine
@@ -20,9 +22,14 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB: ${DB_NAME}
     ports:
-      - "5433:5432"
+      - "5433:5432"   # use 5433 se 5432 já estiver em uso no host
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
 
 volumes:
   postgres_data:
