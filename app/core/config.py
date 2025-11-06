@@ -11,6 +11,11 @@ class Settings(BaseSettings):
     DB_HOST: str
     DB_PORT: int = 5432
 
+    JWT_SECRET_KEY: str
+    JWT_ALGORITHM: str
+    ACCESS_TOKEN_EXPIRE_MINUTES: int
+    REFRESH_TOKEN_EXPIRE_DAYS: int
+
     @property
     def DATABASE_URL(self) -> str:
         return (

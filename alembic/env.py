@@ -7,17 +7,19 @@ from sqlalchemy import engine_from_config, pool
 
 from alembic import context
 
-# adiciona a raiz do projeto ao sys.path para importar "app.*"
+# Garante que /app esteja no PYTHONPATH antes de importar "app.*"
 sys.path.insert(0, os.path.realpath(os.path.join(os.path.dirname(__file__), "..")))
+
+# Import apenas para registrar modelos em Base.metadata (autogenerate).
+import app.models.user as _user  # noqa: F401,E402
+from app.core.config import settings  # noqa: E402
+from app.db.database import Base  # noqa: E402
 
 config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-from app.core.config import settings  # noqa: E402
-from app.db.database import Base  # noqa: E402
-
-# força a URL do banco a vir do .env via pydantic
+# Força a URL vir do .env via pydantic settings
 config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
 
 target_metadata = Base.metadata
