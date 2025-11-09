@@ -1,7 +1,7 @@
 # app/main.py
 from fastapi import FastAPI, status
 
-from app.routers import auth_router
+from app.routers import auth_router, task_router
 
 # Criamos a aplicação FastAPI
 app = FastAPI(
@@ -11,6 +11,7 @@ app = FastAPI(
 )
 
 app.include_router(auth_router.router)
+app.include_router(task_router.router)
 
 
 @app.get("/health", tags=["Health Check"], status_code=status.HTTP_200_OK)

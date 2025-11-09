@@ -35,6 +35,18 @@ class UserRepository:
             .first()
         )
 
+    def get_by_id(self, user_id: int) -> Optional[User]:
+        """
+        Obtém um utilizador ATIVO pelo seu ID.
+
+        Implementa a regra de soft delete.
+        """
+        return (
+            self.db.query(User)
+            .filter(User.id == user_id, User.deleted_at == None)
+            .first()
+        )
+
     def create(self, user_create: UserCreate, hashed_password: str) -> User:
         """
         Cria um novo registo de utilizador na base de dados.

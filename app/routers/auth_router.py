@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
-from app.db.database import SessionLocal
+from app.db.database import get_db_session
 from app.schemas.token import Token
 from app.schemas.user import UserCreate, UserRead
 from app.services.user_service import UserService
@@ -15,18 +15,6 @@ router = APIRouter(
     prefix="/api/auth",  # Prefixo da URL (conforme Especificação)
     tags=["Authentication"],  # Tag para a documentação /docs
 )
-
-
-# --- Dependência de Sessão de DB ---
-# Esta é a nossa função de "Injeção de Dependência".
-# Ela garante que abrimos uma sessão de DB para cada request
-# e que a fechamos (com 'finally') no final, mesmo se um erro ocorrer.
-def get_db_session():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 
 # --- Endpoint de Registo ---

@@ -9,8 +9,7 @@ from alembic import context
 
 # Garante que /app esteja no PYTHONPATH antes de importar "app.*"
 sys.path.insert(0, os.path.realpath(os.path.join(os.path.dirname(__file__), "..")))
-
-# Import apenas para registrar modelos em Base.metadata (autogenerate).
+import app.models.task as _task  # noqa: F401,E402
 import app.models.user as _user  # noqa: F401,E402
 from app.core.config import settings  # noqa: E402
 from app.db.database import Base  # noqa: E402
