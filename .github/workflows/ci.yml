@@ -1,0 +1,73 @@
+# .github/workflows/ci.yml
+
+name: API CI Pipeline
+
+# 1. Gatilhos (Triggers)
+# Corre este workflow em pushes ou PRs para a 'main' ou 'develop'
+on:
+  push:
+    branches: [ "main", "develop" ]
+  pull_request:
+    branches: [ "main", "develop" ]
+
+jobs:
+  # 2. Job de Teste
+  # Um "job" é uma "máquina" que corre os nossos passos
+  test:
+    name: Run Tests
+    # Corre numa máquina virtual Linux (Ubuntu)
+    runs-on: ubuntu-latest
+
+    steps:
+      # 3. Passo: Checkout do Código
+      # Descarrega o nosso código (a nossa branch) para a máquina
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      # 4. Passo: Configurar o Python (para o .env)
+      # (Não é estritamente necessário, mas é boa prática)
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      # 5. Passo: Criar o ficheiro .env para o Docker
+      # O CI não tem o nosso .env local. Temos de o criar.
+      # Usamos os mesmos valores que temos localmente.
+      - name: Create .env file
+        run: |
+          echo "DB_USER=postgres" >> .env
+          echo "DB_PASSWORD=supersecret" >> .env
+          echo "DB_NAME=todo_db" >> .env
+          echo "DB_HOST=db" >> .env  # 'db' é o nome do serviço no compose
+          echo "DB_PORT=5432" >> .env
+          echo "TEST_DATABASE_URL=postgresql+psycopg2://postgres:supersecret@db:5432/todo_db_test" >> .env
+          
+          # Copia os segredos do .env (o JWT) para o .env do CI
+          # (Em produção real, usaríamos Segredos do GitHub)
+          echo "JWT_SECRET_KEY=a7a0303126f31f9d4538116f4325c898b136b3b5c56c2f7c688c34e3f848b6f3" >> .env
+          echo "JWT_ALGORITHM=HS256" >> .env
+          echo "ACCESS_TOKEN_EXPIRE_MINUTES=30" >> .env
+          echo "REFRESH_TOKEN_EXPIRE_DAYS=7" >> .env
+          echo "MIGRATE_ON_START=true" >> .env
+
+      # 6. Passo: Subir os Containers (API + DB)
+      # Usa o nosso 'docker-compose.yml' para subir tudo
+      # O '-d' (detached) é crucial para correr em background
+      - name: Start Docker Compose
+        run: docker compose up -d --build
+
+      # 7. Passo: Esperar pelo Healthcheck
+      # Damos 30s ao Postgres para ficar "saudável" (como definimos no compose)
+      # Isto impede que os testes corram antes de o DB estar pronto
+      - name: Wait for services to be healthy
+        run: |
+          echo "Aguardando o container 'db' ficar saudável..."
+          docker compose ps
+          # O 'docker compose wait' espera que o healthcheck do 'db' passe
+          docker compose wait --timeout 60s db
+        
+      # 8. Passo: Executar os Testes (O Grande Final)
+      # Executa os nossos 8 testes automatizados
+      - name: Run Pytest
+        run: docker compose exec -e PYTHONPATH=/app api python -m pytest
