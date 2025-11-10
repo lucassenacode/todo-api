@@ -9,9 +9,13 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 # deps de sistema: psycopg2 + build do bcrypt (caso precise)
 RUN apt-get update \
- && apt-get install -y --no-install-recommends libpq-dev build-essential python3-dev \
+ && apt-get install -y --no-install-recommends \
+    libpq-dev \
+    build-essential \
+    python3-dev \
+    curl \
+    git \ 
  && rm -rf /var/lib/apt/lists/*
-
 # instala pip deps primeiro (aproveita cache)
 COPY requirements.txt .
 RUN pip install -r requirements.txt

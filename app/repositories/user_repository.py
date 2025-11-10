@@ -31,7 +31,7 @@ class UserRepository:
         """
         return (
             self.db.query(User)
-            .filter(User.email == email, User.deleted_at == None)
+            .filter(User.email == email, User.deleted_at is None)
             .first()
         )
 
@@ -43,7 +43,7 @@ class UserRepository:
         """
         return (
             self.db.query(User)
-            .filter(User.id == user_id, User.deleted_at == None)
+            .filter(User.id == user_id, User.deleted_at is None)
             .first()
         )
 

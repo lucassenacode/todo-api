@@ -25,7 +25,7 @@ class TaskRepository:
         Todas as outras consultas devem usar esta como base.
         """
         return self.db.query(Task).filter(
-            Task.owner_id == owner_id, Task.deleted_at == None
+            Task.owner_id == owner_id, Task.deleted_at is None
         )
 
     def get_by_id(self, task_id: int, owner_id: int) -> Optional[Task]:

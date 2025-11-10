@@ -1,5 +1,3 @@
-# .github/workflows/ci.yml
-
 name: API CI Pipeline
 
 on:
@@ -9,51 +7,44 @@ on:
     branches: [ "main", "develop" ]
 
 jobs:
-  # --- 1. NOVO JOB: LINT ---
+  # --- 1. LINT ---
   lint:
     name: Run Lint
     runs-on: ubuntu-latest
 
     steps:
-      # Checkout do código
       - name: Check out code
         uses: actions/checkout@v4
 
-      # Configura o Python (necessário para o Ruff)
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.13'
-          
-      # Instala o Ruff (o nosso linter)
+
       - name: Install Ruff
         run: pip install ruff
-        
-      # Executa o Linter (verifica por erros de estilo)
+
       - name: Run Ruff Check (Lint)
         run: ruff check .
-        
-      # Executa o Formatter (verifica a formatação)
+
       - name: Run Ruff Format Check
         run: ruff format --check .
 
-jobs:
+  # --- 2. TESTES ---
   test:
     name: Run Tests
     runs-on: ubuntu-latest
+    needs: [lint]   # Só roda testes se o lint passar
 
     steps:
-      # 1. Checkout do Código
       - name: Check out code
         uses: actions/checkout@v4
 
-      # 2. Configurar o Python
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.13'
 
-      # 3. Criar o ficheiro .env para o CI
       - name: Create .env file
         run: |
           echo "DB_USER=postgres" >> .env
@@ -68,13 +59,8 @@ jobs:
           echo "REFRESH_TOKEN_EXPIRE_DAYS=7" >> .env
           echo "MIGRATE_ON_START=true" >> .env
 
-      # 4. Passo: Subir os Containers e Aguardar (A CORREÇÃO)
-      # (Usamos '--wait' no 'up', como você sugeriu. O Docker Compose
-      # não irá terminar este passo até que o 'healthcheck' do 'db' passe.)
-      - name: Start Docker Compose and Wait 
+      - name: Start Docker Compose and Wait
         run: docker compose up -d --build --wait db api
 
-      # 5. Passo: Executar os Testes
-      # (Agora temos a garantia de que o 'db' está pronto)
       - name: Run Pytest
         run: docker compose exec -e PYTHONPATH=/app api python -m pytest
