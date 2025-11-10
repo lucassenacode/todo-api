@@ -1,5 +1,5 @@
 # app/schemas/user.py
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, ConfigDict, EmailStr
 
 # --- Schemas Base ---
 # Usamos um Schema Base para campos comuns (como email)
@@ -34,6 +34,7 @@ class UserRead(UserBase):
     id: int
 
     # Configuração Pydantic para permitir o mapeamento
-    # de atributos de um modelo SQLAlchemy (ex: user.id)
-    class Config:
-        from_attributes = True
+    # de atributos de um modelo SQLAlchemy (ex: user.id)class UserRead(UserBase):
+    id: int
+
+    model_config = ConfigDict(from_attributes=True)
