@@ -65,7 +65,7 @@ jobs:
           echo "Aguardando o container 'db' ficar saudável..."
           docker compose ps
           # O 'docker compose wait' espera que o healthcheck do 'db' passe
-          docker compose wait --timeout 60s db
+          docker compose wait --time 60s db
         
       # 8. Passo: Executar os Testes (O Grande Final)
       # Executa os nossos 8 testes automatizados
