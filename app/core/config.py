@@ -1,4 +1,3 @@
-# app/core/config.py
 import os
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -21,14 +20,9 @@ class Settings(BaseSettings):
 
     @property
     def DATABASE_URL(self) -> str:
-        """
-        Gera a URL de conexão do banco de dados.
-
-        Se a variável de ambiente 'TESTING' estiver definida,
-        usa a TEST_DATABASE_URL. Caso contrário, usa a DB normal.
-        """
+        # Em testes, usa o DB de teste (ex: postgresql+psycopg2://.../todo_test)
         if os.getenv("TESTING") == "true":
-            return self.TEST_DATABASE_URL  # <-- Retorna a URL de teste
+            return self.TEST_DATABASE_URL
 
         return (
             f"postgresql+psycopg2://{self.DB_USER}:{self.DB_PASSWORD}"
