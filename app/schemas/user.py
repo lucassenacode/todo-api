@@ -1,40 +1,42 @@
-# app/schemas/user.py
-from pydantic import BaseModel, ConfigDict, EmailStr
+from enum import Enum
+from typing import List, Optional
 
-# --- Schemas Base ---
-# Usamos um Schema Base para campos comuns (como email)
-# para evitar repetição e para validação.
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
+
+
+class UserRole(str, Enum):
+    USER = "user"
+    ADMIN = "admin"
 
 
 class UserBase(BaseModel):
-    """Schema base para o Utilizador, contém campos comuns."""
-
-    email: EmailStr  # Valida que o email está num formato correto
-
-
-# --- Schemas de API ---
+    email: EmailStr
 
 
 class UserCreate(UserBase):
-    """
-    Schema para a criação de um novo utilizador (input para /register).
-    Recebe o email (do Base) e a password.
-    """
-
-    password: str
+    password: str = Field(min_length=8, max_length=72)
 
 
 class UserRead(UserBase):
-    """
-    Schema para a leitura de um utilizador (output do /register).
-    Devolve o email (do Base) e o id.
-    (NUNCA devolve a password).
-    """
-
     id: int
-
-    # Configuração Pydantic para permitir o mapeamento
-    # de atributos de um modelo SQLAlchemy (ex: user.id)class UserRead(UserBase):
-    id: int
+    name: Optional[str] = None
+    role: UserRole
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class UserProfileUpdate(BaseModel):
+    """
+    Atualização do próprio perfil:
+    - Pode alterar name
+    - Pode trocar a password (new_password)
+    - NÃO pode alterar o email.
+    """
+
+    name: Optional[str] = None
+    new_password: Optional[str] = Field(default=None, min_length=8, max_length=72)
+
+
+class UserList(BaseModel):
+    items: List[UserRead]
+    total: int

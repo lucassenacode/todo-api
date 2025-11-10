@@ -11,73 +11,57 @@ class TaskRepository:
     def __init__(self, db: Session):
         self.db = db
 
-    def create(
-        self,
-        task_create: TaskCreate,
-        owner_id: int,
-        status: TaskStatus,
-    ) -> Task:
-        task = Task(
-            title=task_create.title,
-            description=task_create.description,
-            owner_id=owner_id,
-            status=status.value if hasattr(status, "value") else status,
+    def _base_query(self, owner_id: int):
+        return self.db.query(Task).filter(
+            Task.owner_id == owner_id,
+            Task.deleted_at.is_(None),
         )
-        self.db.add(task)
-        # commit é responsabilidade do service
-        return task
-
-    def list(
-        self,
-        owner_id: int,
-        status: Optional[TaskStatus],
-        limit: int,
-        offset: int,
-    ) -> Tuple[List[Task], int]:
-        query = (
-            self.db.query(Task)
-            .filter(Task.owner_id == owner_id)
-            .filter(Task.deleted_at.is_(None))
-        )
-
-        if status is not None:
-            query = query.filter(
-                Task.status == (status.value if hasattr(status, "value") else status)
-            )
-
-        total = query.count()
-
-        items = query.order_by(Task.created_at.desc()).offset(offset).limit(limit).all()
-
-        return items, total
 
     def get_by_id(self, task_id: int, owner_id: int) -> Optional[Task]:
-        return (
-            self.db.query(Task)
-            .filter(
-                Task.id == task_id,
-                Task.owner_id == owner_id,
-                Task.deleted_at.is_(None),
-            )
-            .first()
+        return self._base_query(owner_id).filter(Task.id == task_id).first()
+
+    def list(
+        self, owner_id: int, status: Optional[TaskStatus], limit: int, offset: int
+    ) -> Tuple[List[Task], int]:
+        query = self._base_query(owner_id)
+
+        if status:
+            query = query.filter(Task.status == status)
+
+        total = query.count()
+        tasks = query.order_by(Task.created_at.desc()).limit(limit).offset(offset).all()
+        return tasks, total
+
+    def create(
+        self, task_create: TaskCreate, owner_id: int, status: TaskStatus
+    ) -> Task:
+        new_task = Task(
+            **task_create.model_dump(),
+            owner_id=owner_id,
+            status=status,
         )
+        self.db.add(new_task)
+        return new_task
 
     def update(self, db_task: Task, task_update: TaskUpdate) -> Task:
-        if task_update.title is not None:
-            db_task.title = task_update.title
-        if task_update.description is not None:
-            db_task.description = task_update.description
-        if task_update.status is not None:
-            db_task.status = (
-                task_update.status.value
-                if hasattr(task_update.status, "value")
-                else task_update.status
-            )
-
-        self.db.commit()
-        self.db.refresh(db_task)
+        update_data = task_update.model_dump(exclude_unset=True)
+        for key, value in update_data.items():
+            setattr(db_task, key, value)
+        self.db.add(db_task)
         return db_task
 
     def delete(self, db_task: Task) -> None:
         db_task.deleted_at = func.now()
-        self.db.commit()
+        self.db.add(db_task)
+
+    # --- usados pelo dashboard admin ---
+
+    def count_all_active(self) -> int:
+        return self.db.query(Task).filter(Task.deleted_at.is_(None)).count()
+
+    def count_by_status(self, status: TaskStatus) -> int:
+        return (
+            self.db.query(Task)
+            .filter(Task.deleted_at.is_(None), Task.status == status)
+            .count()
+        )

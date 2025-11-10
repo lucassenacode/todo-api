@@ -8,9 +8,7 @@ from app.db.database import Base  # Importamos nossa Base declarative
 class User(Base):
     """
     Modelo de dados para a tabela 'users'.
-
-    Esta classe define a estrutura da tabela de usuários no banco de dados,
-    incluindo os campos definidos na Especificação de Produto.
+    Adiciona os campos 'name' e 'role' (para admin).
     """
 
     # Nome da tabela no banco de dados
@@ -18,26 +16,15 @@ class User(Base):
 
     # Colunas (conforme Especificação de Produto)
     id = Column(Integer, primary_key=True, index=True)
-
     email = Column(String(255), unique=True, index=True, nullable=False)
-
     hashed_password = Column(String(255), nullable=False)
 
-    created_at = Column(
-        DateTime,
-        server_default=func.now(),  # Define o valor padrão no *servidor* de DB
-        nullable=False,
-    )
+    name = Column(String(255), nullable=True)
 
+    role = Column(String(50), nullable=False, server_default="user", index=True)
+
+    created_at = Column(DateTime, server_default=func.now(), nullable=False)
     updated_at = Column(
-        DateTime,
-        server_default=func.now(),
-        onupdate=func.now(),  # Atualiza automaticamente no *servidor* de DB
-        nullable=False,
+        DateTime, server_default=func.now(), onupdate=func.now(), nullable=False
     )
-
-    deleted_at = Column(
-        DateTime,
-        nullable=True,  # NULO significa que o usuário está ATIVO
-        index=True,  # Indexamos para performance (sempre faremos WHERE deleted_at IS NULL)
-    )
+    deleted_at = Column(DateTime, nullable=True, index=True)

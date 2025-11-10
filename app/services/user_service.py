@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from app.models.user import User
 from app.repositories.user_repository import UserRepository
 from app.schemas.token import Token
-from app.schemas.user import UserCreate
+from app.schemas.user import UserCreate, UserProfileUpdate
 from app.security.auth import (
     create_access_token,
     create_refresh_token,
@@ -19,8 +19,9 @@ class UserService:
         self.db = db
         self.user_repo = UserRepository(db)
 
+    # ----------------- Registro & Login (já existiam) -----------------
+
     def register_user(self, user_create: UserCreate) -> User:
-        # 1. Verifica se já existe (regra normal)
         existing_user = self.user_repo.get_by_email(user_create.email)
         if existing_user:
             raise HTTPException(
@@ -31,14 +32,11 @@ class UserService:
         hashed_pass = hash_password(user_create.password)
 
         try:
-            # 2. Cria o user e faz commit aqui
             new_user = self.user_repo.create(user_create, hashed_pass)
             self.db.commit()
             self.db.refresh(new_user)
             return new_user
-
         except IntegrityError:
-            # 3. Se outra request criou ao mesmo tempo (race condition), converte em 409
             self.db.rollback()
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
@@ -58,5 +56,46 @@ class UserService:
         jwt_data = {"sub": str(user.id)}
         access_token = create_access_token(data=jwt_data)
         refresh_token = create_refresh_token(data=jwt_data)
-
         return Token(access_token=access_token, refresh_token=refresh_token)
+
+    # ----------------- Perfil do próprio usuário -----------------
+
+    def get_current_profile(self, user_id: int) -> User:
+        user = self.user_repo.get_by_id(user_id)
+        if not user:
+            # usuário soft-deletado ou inexistente
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found",
+            )
+        return user
+
+    def update_own_profile(
+        self,
+        user: User,
+        profile_data: UserProfileUpdate,
+    ) -> User:
+        """
+        Atualiza:
+        - name (se enviado)
+        - password (se new_password enviado)
+        """
+        # Atualiza campos "simples" (name)
+        updated_user = self.user_repo.update_profile(user, profile_data)
+
+        # Se pediu troca de senha
+        if profile_data.new_password:
+            updated_user.hashed_password = hash_password(profile_data.new_password)
+
+        self.db.add(updated_user)
+        self.db.commit()
+        self.db.refresh(updated_user)
+
+        return updated_user
+
+    def delete_own_account(self, user: User) -> None:
+        """
+        Soft delete da própria conta.
+        """
+        self.user_repo.soft_delete(user)
+        self.db.commit()
