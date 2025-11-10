@@ -42,8 +42,8 @@ jobs:
       # 4. Passo: Subir os Containers e Aguardar (A CORREÇÃO)
       # (Usamos '--wait' no 'up', como você sugeriu. O Docker Compose
       # não irá terminar este passo até que o 'healthcheck' do 'db' passe.)
-      - name: Start Docker Compose and Wait for DB
-        run: docker compose up -d --build --wait db
+      - name: Start Docker Compose and Wait 
+        run: docker compose up -d --build --wait db api
 
       # 5. Passo: Executar os Testes
       # (Agora temos a garantia de que o 'db' está pronto)
