@@ -9,6 +9,35 @@ on:
     branches: [ "main", "develop" ]
 
 jobs:
+  # --- 1. NOVO JOB: LINT ---
+  lint:
+    name: Run Lint
+    runs-on: ubuntu-latest
+
+    steps:
+      # Checkout do código
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      # Configura o Python (necessário para o Ruff)
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          
+      # Instala o Ruff (o nosso linter)
+      - name: Install Ruff
+        run: pip install ruff
+        
+      # Executa o Linter (verifica por erros de estilo)
+      - name: Run Ruff Check (Lint)
+        run: ruff check .
+        
+      # Executa o Formatter (verifica a formatação)
+      - name: Run Ruff Format Check
+        run: ruff format --check .
+
+jobs:
   test:
     name: Run Tests
     runs-on: ubuntu-latest
