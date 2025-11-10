@@ -1,0 +1,66 @@
+name: API CI Pipeline
+
+on:
+  push:
+    branches: [ "main", "develop" ]
+  pull_request:
+    branches: [ "main", "develop" ]
+
+jobs:
+  # --- 1. LINT ---
+  lint:
+    name: Run Lint
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Install Ruff
+        run: pip install ruff
+
+      - name: Run Ruff Check (Lint)
+        run: ruff check .
+
+      - name: Run Ruff Format Check
+        run: ruff format --check .
+
+  # --- 2. TESTES ---
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    needs: [lint]   # Só roda testes se o lint passar
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Create .env file
+        run: |
+          echo "DB_USER=postgres" >> .env
+          echo "DB_PASSWORD=supersecret" >> .env
+          echo "DB_NAME=todo_db" >> .env
+          echo "DB_HOST=db" >> .env
+          echo "DB_PORT=5432" >> .env
+          echo "TEST_DATABASE_URL=postgresql+psycopg2://postgres:supersecret@db:5432/todo_db_test" >> .env
+          echo "JWT_SECRET_KEY=a7a0303126f31f9d4538116f4325c898b136b3b5c56c2f7c688c34e3f848b6f3" >> .env
+          echo "JWT_ALGORITHM=HS256" >> .env
+          echo "ACCESS_TOKEN_EXPIRE_MINUTES=30" >> .env
+          echo "REFRESH_TOKEN_EXPIRE_DAYS=7" >> .env
+          echo "MIGRATE_ON_START=true" >> .env
+
+      - name: Start Docker Compose and Wait
+        run: docker compose up -d --build --wait db api
+
+      - name: Run Pytest
+        run: docker compose exec -e PYTHONPATH=/app api python -m pytest

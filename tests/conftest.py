@@ -1,5 +1,11 @@
-# tests/conftest.py
+# tests/conftest.py (CORRIGIDO)
 import os
+
+# Define que estamos em modo de teste ANTES de importar qualquer
+
+os.environ["TESTING"] = "true"
+
+# 2. O resto das importações
 from typing import Generator
 
 import pytest
@@ -7,16 +13,10 @@ from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
+# 3. Agora estas importações vão usar o 'settings.DATABASE_URL' correto
+from app.core.config import settings  # noqa: E402
 from app.db.database import Base, get_db_session
 from app.main import app
-
-# --- 1. CONFIGURAÇÃO (Executa 1 vez) ---
-
-# Define que estamos em modo de teste *antes* de importar 'settings'
-os.environ["TESTING"] = "true"
-
-# Importa 'settings' AGORA, depois de definir TESTING
-from app.core.config import settings  # noqa: E402
 
 # Cria um motor de DB *apenas* para os testes
 engine = create_engine(settings.DATABASE_URL)
@@ -51,10 +51,13 @@ def create_test_database():
 def db_session() -> Generator[Session, None, None]:
     """
     Fixture de função: Cria uma sessão de DB limpa para CADA teste.
+    Esta fixture é responsável por abrir e fechar a sessão.
     """
     db = TestingSessionLocal()
     try:
         yield db
+        # uma boa prática para testes 'function-scoped'.
+        db.rollback()
     finally:
         db.close()
 
@@ -67,11 +70,10 @@ def client(db_session: Session) -> Generator[TestClient, None, None]:
     """
 
     def override_get_db_session():
-        """Substitui a dependência get_db_session pela sessão de teste."""
-        try:
-            yield db_session
-        finally:
-            db_session.close()
+        """
+        Substitui a dependência get_db_session pela sessão de teste.
+        """
+        yield db_session
 
     # Aplica a "substituição" (override)
     app.dependency_overrides[get_db_session] = override_get_db_session

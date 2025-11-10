@@ -9,9 +9,13 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 # deps de sistema: psycopg2 + build do bcrypt (caso precise)
 RUN apt-get update \
- && apt-get install -y --no-install-recommends libpq-dev build-essential python3-dev \
+ && apt-get install -y --no-install-recommends \
+    libpq-dev \
+    build-essential \
+    python3-dev \
+    curl \
+    git \ 
  && rm -rf /var/lib/apt/lists/*
-
 # instala pip deps primeiro (aproveita cache)
 COPY requirements.txt .
 RUN pip install -r requirements.txt
@@ -29,4 +33,4 @@ RUN sed -i 's/\r$//' /entrypoint.sh && chmod +x /entrypoint.sh
 EXPOSE 8000
 ENTRYPOINT ["/entrypoint.sh"]
 # em dev, com reload; em prod pode tirar o --reload
-CMD ["uvicorn", "app.main:app", "--host=0.0.0.0", "--port=8000", "--reload"]
+CMD ["uvicorn", "app.main:app", "--host=0.0.0.0", "--port=8000", "--reload", "--reload-dir", "/app/app"]

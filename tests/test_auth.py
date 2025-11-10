@@ -41,16 +41,20 @@ def test_register_user_duplicate_email(client: TestClient):
     assert response.json() == {"detail": "Email already registered"}
 
 
+# tests/test_auth.py
+
+
 def test_login_success(client: TestClient):
     """
     Teste 3: Login bem-sucedido.
     Espera um 200 OK e os tokens JWT.
     """
     # 1. Cria o utilizador
-    client.post(
+    reg_response = client.post(
         "/api/auth/register",
         json={"email": "test3@example.com", "password": "password123"},
     )
+    assert reg_response.status_code == 201  # Garante que o registo funcionou
 
     # 2. Tenta fazer login
     response = client.post(
@@ -58,11 +62,13 @@ def test_login_success(client: TestClient):
         data={"username": "test3@example.com", "password": "password123"},
     )
 
+    # 3. Agora as asserções devem passar
     assert response.status_code == 200
     data = response.json()
     assert "access_token" in data
     assert "refresh_token" in data
-    assert data["token_type"] == "bearer"
+    # MANTENHA ESTA LINHA:
+    assert data["token_type"] == "bearer"  # Verifica o tipo de token
 
 
 def test_login_wrong_password(client: TestClient):
