@@ -1,15 +1,15 @@
 name: Presubmit AI Review
 
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+  pull_request_review_comment:
+    types: [created]
+
 permissions:
   contents: read
   pull-requests: write
   issues: write
-
-on:
-  pull_request_target:
-    types: [opened, synchronize]
-  pull_request_review_comment:
-    types: [created]
 
 jobs:
   review:
@@ -23,7 +23,6 @@ jobs:
             exit 1
           fi
 
-      # Garante que o Presubmit veja o código da branch do PR
       - name: Check out PR code
         uses: actions/checkout@v4
         with:
@@ -34,6 +33,5 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
-          # Ajusta pro modelo que bate com sua key:
-          # ex: "gpt-4.1" (OpenAI) ou "claude-3-5-sonnet" etc.
-          LLM_MODEL: "gpt-4.1"
+          LLM_MODEL: "gemini-1.5-pro-latest"
+          LLM_PROVIDER: "ai-sdk"
