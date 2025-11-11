@@ -25,9 +25,7 @@ def get_user_service(db: Session = Depends(get_db_session)) -> UserService:
 def get_me(
     current_user: User = Depends(get_current_user),
 ):
-    """
-    Devolve o utilizador autenticado.
-    """
+    """Retorna o usuário autenticado."""
     return current_user
 
 
@@ -41,13 +39,11 @@ def update_me(
     user_service: UserService = Depends(get_user_service),
     current_user: User = Depends(get_current_user),
 ):
-    """
-    Atualiza o próprio perfil:
-    - name
-    - new_password (opcional)
-    - NÃO altera email
-    """
-    return user_service.update_own_profile(current_user, profile_data)
+    """Atualiza o perfil do usuário autenticado."""
+    return user_service.update_own_profile(
+        current_user,
+        profile_data,
+    )
 
 
 @router.delete(
@@ -58,8 +54,6 @@ def delete_me(
     user_service: UserService = Depends(get_user_service),
     current_user: User = Depends(get_current_user),
 ):
-    """
-    Soft delete da própria conta.
-    """
+    """Soft delete da conta do usuário autenticado."""
     user_service.delete_own_account(current_user)
     return None

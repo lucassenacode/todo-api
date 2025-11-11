@@ -19,8 +19,6 @@ class UserService:
         self.db = db
         self.user_repo = UserRepository(db)
 
-    # ----------------- Registro & Login (já existiam) -----------------
-
     def register_user(self, user_create: UserCreate) -> User:
         existing_user = self.user_repo.get_by_email(user_create.email)
         if existing_user:
@@ -56,14 +54,15 @@ class UserService:
         jwt_data = {"sub": str(user.id)}
         access_token = create_access_token(data=jwt_data)
         refresh_token = create_refresh_token(data=jwt_data)
-        return Token(access_token=access_token, refresh_token=refresh_token)
 
-    # ----------------- Perfil do próprio usuário -----------------
+        return Token(
+            access_token=access_token,
+            refresh_token=refresh_token,
+        )
 
     def get_current_profile(self, user_id: int) -> User:
         user = self.user_repo.get_by_id(user_id)
         if not user:
-            # usuário soft-deletado ou inexistente
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="User not found",
@@ -75,17 +74,12 @@ class UserService:
         user: User,
         profile_data: UserProfileUpdate,
     ) -> User:
-        """
-        Atualiza:
-        - name (se enviado)
-        - password (se new_password enviado)
-        """
-        # Atualiza campos "simples" (name)
         updated_user = self.user_repo.update_profile(user, profile_data)
 
-        # Se pediu troca de senha
         if profile_data.new_password:
-            updated_user.hashed_password = hash_password(profile_data.new_password)
+            updated_user.hashed_password = hash_password(
+                profile_data.new_password,
+            )
 
         self.db.add(updated_user)
         self.db.commit()
@@ -94,8 +88,5 @@ class UserService:
         return updated_user
 
     def delete_own_account(self, user: User) -> None:
-        """
-        Soft delete da própria conta.
-        """
         self.user_repo.soft_delete(user)
         self.db.commit()
