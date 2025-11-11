@@ -1,0 +1,26 @@
+# render.yaml
+#IAC
+services:
+  # 1. O nosso Serviço de API (Backend)
+  - type: web
+    name: todo-api-backend
+    # Diz ao Render para usar o nosso Dockerfile otimizado
+    runtime: docker
+    # Aponta para o nosso repositório
+    repo: https://github.com/lucassenacode/todo-api  # (Certifique-se que o repo é público)
+    # Define a branch que o Render deve "observar" para o deploy
+    branch: main
+
+    # Define o Health Check (para o Render saber se a API está "viva")
+    # O Render espera 15s (start_period) antes do primeiro check
+    healthCheck:
+      path: /health
+      initialDelaySeconds: 45 # Dá 45s para o Alembic (migrações) correr
+
+    # Define o Plano Gratuito (Free Tier)
+    plan: free
+
+    # --- Ligação aos Segredos ---
+    # Vamos criar um "Grupo de Ambiente" chamado 'todo-api-secrets'
+    # que conterá todas as nossas variáveis (ex: a URL do Neon)
+    envVarGroup: todo-api-secrets

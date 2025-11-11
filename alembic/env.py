@@ -7,7 +7,6 @@ from sqlalchemy import engine_from_config, pool
 
 from alembic import context
 
-# Garante que /app esteja no PYTHONPATH antes de importar "app.*"
 sys.path.insert(0, os.path.realpath(os.path.join(os.path.dirname(__file__), "..")))
 import app.models.task as _task  # noqa: F401,E402
 import app.models.user as _user  # noqa: F401,E402

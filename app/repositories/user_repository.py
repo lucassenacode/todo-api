@@ -1,63 +1,67 @@
-# app/repositories/user_repository.py
-from typing import Optional
+from typing import List, Optional, Tuple
 
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.models.user import User
-from app.schemas.user import UserCreate
+from app.schemas.user import UserCreate, UserProfileUpdate
 
 
 class UserRepository:
     """
-    Camada de acesso a dados (Repositório) para o modelo User.
-
-    Implementa as operações de base de dados (CRUD) para utilizadores.
+    Operações de persistência para usuários.
     """
 
     def __init__(self, db: Session):
-        """
-        Inicializa o repositório com uma sessão de base de dados.
-
-        Args:
-            db (Session): A sessão do SQLAlchemy a ser usada.
-        """
         self.db = db
 
     def get_by_email(self, email: str) -> Optional[User]:
-        """
-        Obtém um utilizador ATIVO pelo seu email.
-
-        Implementa a regra de soft delete (apenas utilizadores não apagados).
-        """
         return (
             self.db.query(User)
-            .filter(User.email == email, User.deleted_at == None)
+            .filter(
+                User.email == email,
+                User.deleted_at.is_(None),
+            )
             .first()
         )
 
     def get_by_id(self, user_id: int) -> Optional[User]:
-        """
-        Obtém um utilizador ATIVO pelo seu ID.
-
-        Implementa a regra de soft delete.
-        """
         return (
             self.db.query(User)
-            .filter(User.id == user_id, User.deleted_at == None)
+            .filter(
+                User.id == user_id,
+                User.deleted_at.is_(None),
+            )
             .first()
         )
 
     def create(self, user_create: UserCreate, hashed_password: str) -> User:
-        """
-        Cria um novo registo de utilizador na base de dados.
-
-        Nota: A password já deve vir "hasheada" do service.
-        """
-        # Cria a nova instância do modelo SQLAlchemy
-        new_user = User(email=user_create.email, hashed_password=hashed_password)
-
+        new_user = User(
+            email=user_create.email,
+            hashed_password=hashed_password,
+        )
         self.db.add(new_user)
-        self.db.commit()
-        self.db.refresh(new_user)  # Atualiza o objeto new_user com dados do DB (ex: ID)
-
         return new_user
+
+    def update_profile(
+        self,
+        db_user: User,
+        profile_data: UserProfileUpdate,
+    ) -> User:
+        if profile_data.name is not None:
+            db_user.name = profile_data.name
+        self.db.add(db_user)
+        return db_user
+
+    def soft_delete(self, db_user: User) -> None:
+        db_user.deleted_at = func.now()
+        self.db.add(db_user)
+
+    def list_all(self, limit: int, offset: int) -> Tuple[List[User], int]:
+        query = self.db.query(User).filter(User.deleted_at.is_(None))
+        total = query.count()
+        users = query.offset(offset).limit(limit).all()
+        return users, total
+
+    def count_active(self) -> int:
+        return self.db.query(User).filter(User.deleted_at.is_(None)).count()
