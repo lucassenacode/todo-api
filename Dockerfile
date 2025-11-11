@@ -32,5 +32,5 @@ RUN sed -i 's/\r$//' /entrypoint.sh && chmod +x /entrypoint.sh
 
 EXPOSE 8000
 ENTRYPOINT ["/entrypoint.sh"]
-# em dev, com reload; em prod pode tirar o --reload
-CMD ["uvicorn", "app.main:app", "--host=0.0.0.0", "--port=8000", "--reload", "--reload-dir", "/app/app"]
+
+CMD ["uvicorn", "app.main:app", "--host=0.0.0.0", "--port=8000"]

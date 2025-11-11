@@ -57,7 +57,10 @@ class TaskService:
         owner_id: int,
     ) -> Task:
         db_task = self._get_task_by_id_and_owner(task_id, owner_id)
-        updated_task = self.task_repo.update(db_task=db_task, task_update=task_update)
+        updated_task = self.task_repo.update(
+            db_task=db_task,
+            task_update=task_update,
+        )
         self.db.commit()
         self.db.refresh(updated_task)
         return updated_task

@@ -31,4 +31,5 @@ def get_admin_dashboard(
     _: User = Depends(ensure_admin),
     admin_service: AdminService = Depends(get_admin_service),
 ):
+    """Retorna estatísticas do dashboard administrativo."""
     return admin_service.get_dashboard_stats()

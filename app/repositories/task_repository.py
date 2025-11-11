@@ -1,13 +1,17 @@
 from typing import List, Optional, Tuple
 
+from sqlalchemy import func
 from sqlalchemy.orm import Session
-from sqlalchemy.sql import func
 
 from app.models.task import Task
 from app.schemas.task import TaskCreate, TaskStatus, TaskUpdate
 
 
 class TaskRepository:
+    """
+    Operações de persistência para tarefas.
+    """
+
     def __init__(self, db: Session):
         self.db = db
 
@@ -21,7 +25,11 @@ class TaskRepository:
         return self._base_query(owner_id).filter(Task.id == task_id).first()
 
     def list(
-        self, owner_id: int, status: Optional[TaskStatus], limit: int, offset: int
+        self,
+        owner_id: int,
+        status: Optional[TaskStatus],
+        limit: int,
+        offset: int,
     ) -> Tuple[List[Task], int]:
         query = self._base_query(owner_id)
 
@@ -33,7 +41,10 @@ class TaskRepository:
         return tasks, total
 
     def create(
-        self, task_create: TaskCreate, owner_id: int, status: TaskStatus
+        self,
+        task_create: TaskCreate,
+        owner_id: int,
+        status: TaskStatus,
     ) -> Task:
         new_task = Task(
             **task_create.model_dump(),
@@ -54,14 +65,15 @@ class TaskRepository:
         db_task.deleted_at = func.now()
         self.db.add(db_task)
 
-    # --- usados pelo dashboard admin ---
-
     def count_all_active(self) -> int:
         return self.db.query(Task).filter(Task.deleted_at.is_(None)).count()
 
     def count_by_status(self, status: TaskStatus) -> int:
         return (
             self.db.query(Task)
-            .filter(Task.deleted_at.is_(None), Task.status == status)
+            .filter(
+                Task.deleted_at.is_(None),
+                Task.status == status,
+            )
             .count()
         )

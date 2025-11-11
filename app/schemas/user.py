@@ -26,15 +26,12 @@ class UserRead(UserBase):
 
 
 class UserProfileUpdate(BaseModel):
-    """
-    Atualização do próprio perfil:
-    - Pode alterar name
-    - Pode trocar a password (new_password)
-    - NÃO pode alterar o email.
-    """
-
     name: Optional[str] = None
-    new_password: Optional[str] = Field(default=None, min_length=8, max_length=72)
+    new_password: Optional[str] = Field(
+        default=None,
+        min_length=8,
+        max_length=72,
+    )
 
 
 class UserList(BaseModel):
