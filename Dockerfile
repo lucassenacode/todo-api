@@ -16,7 +16,6 @@ RUN apt-get update \
     curl \
     git \
  && rm -rf /var/lib/apt/lists/*
-
 # instala pip deps primeiro (aproveita cache)
 COPY requirements.txt .
 RUN pip install -r requirements.txt
