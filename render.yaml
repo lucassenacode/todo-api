@@ -17,6 +17,6 @@ services:
     # Health check para o Render saber que a API está ok
     healthCheckPath: /health
 
-    # Grupo de variáveis de ambiente configurado no painel do Render
-    envVarGroups:
-      - todo-api-secrets
+    # Puxa todas as variáveis do Environment Group 'todo-api-secrets'
+    envVars:
+      - fromGroup: todo-api-secrets

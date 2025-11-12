@@ -14,7 +14,7 @@ RUN apt-get update \
     build-essential \
     python3-dev \
     curl \
-    git \ 
+    git \
  && rm -rf /var/lib/apt/lists/*
 # instala pip deps primeiro (aproveita cache)
 COPY requirements.txt .
